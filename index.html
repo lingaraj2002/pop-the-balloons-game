@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pop The Balloons</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #000;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+      #game-container {
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game-container"></div>
+    <script>
+      // Game Configuration
+      const config = {
+        type: Phaser.AUTO,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        parent: "#game-container",
+        scale: {
+          mode: Phaser.Scale.FIT,
+          autoCenter: Phaser.Scale.CENTER_BOTH,
+          width: 600,
+          height: 800,
+        },
+        backgroundColor: "#87CEFA",
+        scene: {
+          preload: preload,
+          create: create,
+          update: update,
+        },
+        pixelArt: true,
+      };
+
+      // Game Variables
+      let balloons;
+      let score = 0;
+      let scoreText;
+      let time = 30;
+      let timeText;
+
+      // Preload Function
+      function preload() {}
+
+      // Create Function
+      function create() {
+        score = 0;
+        time = 30;
+        // Title
+        this.add
+          .text(300, 50, "Pop The Balloons", {
+            fontSize: "32px",
+            fill: "#fff",
+            fontStyle: "bold",
+          })
+          .setOrigin(0.5);
+
+        // Score Text
+        scoreText = this.add.text(30, 100, "Score : " + score, {
+          fontSize: "24px",
+          fill: "#fff",
+          fontStyle: "bold",
+        });
+
+        // Time Text
+        timeText = this.add.text(440, 100, "Time : " + time, {
+          fontSize: "24px",
+          fill: "#fff",
+          fontStyle: "bold",
+        });
+
+        // Spawn Balloon Every Sec
+        this.time.addEvent({
+          delay: 1000,
+          callback: () => spawnBalloon(this),
+          loop: true,
+        });
+
+        // Counter Timer
+        this.time.addEvent({
+          delay: 1000,
+          callback: () => {
+            if (time <= 0) {
+              this.add
+                .text(300, 400, "Game Over", {
+                  fontSize: "48px",
+                  fill: "#fff",
+                  fontStyle: "bold",
+                })
+                .setOrigin(0.5);
+            } else {
+              time--;
+              timeText.setText("Time : " + time);
+            }
+          },
+          loop: true,
+        });
+      }
+
+      // Update Function
+      function update() {}
+
+      // Spawn Balloons Function
+      function spawnBalloon(scene) {
+        if (time <= 0) return;
+
+        const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff];
+        const x = Phaser.Math.Between(50, 550);
+        const color = Phaser.Utils.Array.GetRandom(colors);
+
+        const balloon = scene.add.ellipse(x, 800, 60, 80, color);
+        balloon.setInteractive();
+
+        // String
+        const graphics = scene.add.graphics();
+        graphics.lineStyle(2, 0x000000);
+        graphics.moveTo(x, 840);
+        graphics.lineTo(x, 900);
+        graphics.strokePath();
+
+        const stringCap = scene.add.triangle(
+          x,
+          840,
+          0,
+          12,
+          12,
+          12,
+          6,
+          0,
+          color,
+        );
+
+        // Float Up
+        scene.tweens.add({
+          targets: [balloon, graphics, stringCap],
+          y: "-=800",
+          duration: time > 20 ? 4000 : time > 10 ? 3000 : 2000,
+          onComplete: () => {
+            balloon.destroy();
+            graphics.destroy();
+            stringCap.destroy();
+          },
+        });
+
+        // Pop On Click
+        balloon.on("pointerdown", () => {
+          score += 1;
+          scoreText.setText("Score : " + score);
+          balloon.destroy();
+          graphics.destroy();
+          stringCap.destroy();
+
+          // Pop Effect
+          const particles = scene.add.particles(
+            balloon.x,
+            balloon.y,
+            "default",
+            {
+              speed: { min: 50, max: 150 },
+              scale: { start: 1, end: 0 },
+              tint: color,
+              lifespan: 500,
+              quantity: 10,
+            },
+          );
+          scene.time.delayedCall(500, () => particles.destroy());
+        });
+      }
+
+      const game = new Phaser.Game(config);
+    </script>
+  </body>
+</html>
