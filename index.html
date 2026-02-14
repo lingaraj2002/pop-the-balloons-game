@@ -4,7 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pop The Balloons</title>
+
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.js"></script>
+
     <style>
       body {
         margin: 0;
@@ -16,171 +18,255 @@
         align-items: center;
         height: 100vh;
       }
+
       #game-container {
         box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        background-image: linear-gradient(to top, #fff1eb 0%, #ace0f9 100%);
       }
     </style>
   </head>
+
   <body>
     <div id="game-container"></div>
+
     <script>
-      // Game Configuration
       const config = {
         type: Phaser.AUTO,
         width: window.innerWidth,
         height: window.innerHeight,
-        parent: "#game-container",
+        parent: "game-container",
         scale: {
-          mode: Phaser.Scale.FIT,
+          mode: Phaser.Scale.RESIZE,
           autoCenter: Phaser.Scale.CENTER_BOTH,
-          width: 600,
-          height: 800,
         },
-        backgroundColor: "#87CEFA",
+        transparent: true,
         scene: {
-          preload: preload,
-          create: create,
-          update: update,
+          preload,
+          create,
+          update,
         },
-        pixelArt: true,
       };
 
-      // Game Variables
-      let balloons;
       let score = 0;
+      let timeLeft = 30;
       let scoreText;
-      let time = 30;
       let timeText;
+      let spawnEvent;
+      let timerEvent;
+      let gameActive = false;
 
-      // Preload Function
       function preload() {}
 
-      // Create Function
       function create() {
-        score = 0;
-        time = 30;
-        // Title
-        this.add
-          .text(300, 50, "Pop The Balloons", {
-            fontSize: "32px",
-            fill: "#fff",
+        if (!gameActive) {
+          showStartScreen(this);
+        } else {
+          startGame(this);
+        }
+      }
+
+      function update() {}
+
+      // ======================
+      // START SCREEN
+      // ======================
+
+      function showStartScreen(scene) {
+        const centerX = scene.scale.width / 2;
+        const centerY = scene.scale.height / 2;
+
+        scene.add
+          .text(centerX, centerY - 80, "Pop The Balloons", {
+            fontSize: "38px",
             fontStyle: "bold",
+            stroke: "#1B1B1B",
+            strokeThickness: 5,
+            color: "#ffffff",
           })
           .setOrigin(0.5);
 
-        // Score Text
-        scoreText = this.add.text(30, 100, "Score : " + score, {
+        const startBtn = scene.add
+          .text(centerX, centerY, "Start Game", {
+            fontSize: "24px",
+            fontStyle: "bold",
+            backgroundColor: "#ffffff",
+            padding: { x: 24, y: 12 },
+            color: "#000000",
+          })
+          .setOrigin(0.5)
+          .setInteractive({ useHandCursor: true });
+
+        const border = scene.add
+          .rectangle(centerX, centerY, startBtn.width + 12, startBtn.height + 8)
+          .setStrokeStyle(3, 0xffffff)
+          .setOrigin(0.5);
+
+        startBtn.setDepth(1);
+
+        startBtn.on("pointerdown", () => {
+          gameActive = true;
+          scene.scene.restart();
+        });
+      }
+
+      // ======================
+      // START GAME
+      // ======================
+
+      function startGame(scene) {
+        gameActive = true;
+        score = 0;
+        timeLeft = 30;
+
+        scoreText = scene.add.text(20, 20, "Score: 0", {
           fontSize: "24px",
-          fill: "#fff",
           fontStyle: "bold",
+          stroke: "#1B1B1B",
+          strokeThickness: 4,
+          color: "#ffffff",
         });
 
-        // Time Text
-        timeText = this.add.text(440, 100, "Time : " + time, {
-          fontSize: "24px",
-          fill: "#fff",
-          fontStyle: "bold",
-        });
+        timeText = scene.add
+          .text(scene.scale.width - 20, 20, "Time: 30", {
+            fontSize: "24px",
+            fontStyle: "bold",
+            stroke: "#1B1B1B",
+            strokeThickness: 4,
+            color: "#ffffff",
+          })
+          .setOrigin(1, 0);
 
-        // Spawn Balloon Every Sec
-        this.time.addEvent({
+        spawnEvent = scene.time.addEvent({
           delay: 1000,
-          callback: () => spawnBalloon(this),
+          callback: () => spawnBalloon(scene),
           loop: true,
         });
 
-        // Counter Timer
-        this.time.addEvent({
+        timerEvent = scene.time.addEvent({
           delay: 1000,
           callback: () => {
-            if (time <= 0) {
-              this.add
-                .text(300, 400, "Game Over", {
-                  fontSize: "48px",
-                  fill: "#fff",
-                  fontStyle: "bold",
-                })
-                .setOrigin(0.5);
-            } else {
-              time--;
-              timeText.setText("Time : " + time);
+            timeLeft--;
+            timeText.setText("Time: " + timeLeft);
+
+            if (timeLeft <= 0) {
+              timerEvent.remove();
+              spawnEvent.remove();
+              gameActive = false;
+
+              // 2-second delay before Game Over
+              scene.time.delayedCall(2000, () => {
+                endGame(scene);
+              });
             }
           },
           loop: true,
         });
       }
 
-      // Update Function
-      function update() {}
+      // ======================
+      // SPAWN BALLOON
+      // ======================
 
-      // Spawn Balloons Function
       function spawnBalloon(scene) {
-        if (time <= 0) return;
+        if (!gameActive) return;
 
         const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff];
-        const x = Phaser.Math.Between(50, 550);
+        const x = Phaser.Math.Between(50, scene.scale.width - 50);
         const color = Phaser.Utils.Array.GetRandom(colors);
 
-        const balloon = scene.add.ellipse(x, 800, 60, 80, color);
-        balloon.setInteractive();
+        const container = scene.add.container(x, scene.scale.height + 100);
 
-        // String
-        const graphics = scene.add.graphics();
-        graphics.lineStyle(2, 0x000000);
-        graphics.moveTo(x, 840);
-        graphics.lineTo(x, 900);
-        graphics.strokePath();
+        const balloon = scene.add.ellipse(0, 0, 60, 80, color);
+        balloon.setInteractive({ useHandCursor: true });
 
-        const stringCap = scene.add.triangle(
-          x,
-          840,
-          0,
-          12,
-          12,
-          12,
-          6,
-          0,
-          color,
-        );
+        const string = scene.add.line(0, 40, 0, 40, 0, 110, 0x000000);
+        string.setLineWidth(2);
 
-        // Float Up
+        const knot = scene.add.triangle(0, 40, 0, 12, 12, 12, 6, 0, color);
+
+        container.add([balloon, string, knot]);
+
         scene.tweens.add({
-          targets: [balloon, graphics, stringCap],
-          y: "-=800",
-          duration: time > 20 ? 4000 : time > 10 ? 3000 : 2000,
-          onComplete: () => {
-            balloon.destroy();
-            graphics.destroy();
-            stringCap.destroy();
-          },
+          targets: container,
+          y: -200,
+          duration: timeLeft > 20 ? 4000 : timeLeft > 10 ? 3000 : 2000,
+          ease: "Linear",
+          onComplete: () => container.destroy(),
         });
 
-        // Pop On Click
         balloon.on("pointerdown", () => {
-          score += 1;
-          scoreText.setText("Score : " + score);
-          balloon.destroy();
-          graphics.destroy();
-          stringCap.destroy();
-
-          // Pop Effect
-          const particles = scene.add.particles(
-            balloon.x,
-            balloon.y,
-            "default",
-            {
-              speed: { min: 50, max: 150 },
-              scale: { start: 1, end: 0 },
-              tint: color,
-              lifespan: 500,
-              quantity: 10,
-            },
-          );
-          scene.time.delayedCall(500, () => particles.destroy());
+          if (!gameActive) return;
+          score++;
+          scoreText.setText("Score: " + score);
+          container.destroy();
         });
       }
 
-      const game = new Phaser.Game(config);
+      // ======================
+      // END GAME
+      // ======================
+
+      function endGame(scene) {
+        scene.add
+          .text(
+            scene.scale.width / 2,
+            scene.scale.height / 2 - 60,
+            "Game Over",
+            {
+              fontSize: "48px",
+              fontStyle: "bold",
+              stroke: "#1B1B1B",
+              strokeThickness: 5,
+              color: "#ffffff",
+            },
+          )
+          .setOrigin(0.5);
+
+        scene.add
+          .text(
+            scene.scale.width / 2,
+            scene.scale.height / 2 - 10,
+            "Final Score: " + score,
+            {
+              fontSize: "28px",
+              fontStyle: "bold",
+              stroke: "#1B1B1B",
+              strokeThickness: 4,
+              color: "#ffffff",
+            },
+          )
+          .setOrigin(0.5);
+
+        const restartBtn = scene.add
+          .text(scene.scale.width / 2, scene.scale.height / 2 + 50, "Restart", {
+            fontSize: "24px",
+            fontStyle: "bold",
+            backgroundColor: "#ffffff",
+            padding: { x: 24, y: 12 },
+            color: "#000000",
+          })
+          .setOrigin(0.5)
+          .setInteractive({ useHandCursor: true });
+
+        const border = scene.add
+          .rectangle(
+            scene.scale.width / 2,
+            scene.scale.height / 2 + 50,
+            restartBtn.width + 12,
+            restartBtn.height + 8,
+          )
+          .setStrokeStyle(3, 0xffffff)
+          .setOrigin(0.5);
+
+        restartBtn.setDepth(1);
+
+        restartBtn.on("pointerdown", () => {
+          gameActive = true;
+          scene.scene.restart();
+        });
+      }
+
+      new Phaser.Game(config);
     </script>
   </body>
 </html>
