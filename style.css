@@ -1,0 +1,19 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  height: 100vh;
+  background-color: #000;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#game-container {
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+  background-image: linear-gradient(to top, #fff1eb 0%, #ace0f9 100%);
+}
