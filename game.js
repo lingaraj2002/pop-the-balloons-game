@@ -25,9 +25,9 @@ let clickSound;
 let popSound;
 
 function preload() {
-  this.load.audio("bgMusic", "/assets/bg-music.mp3");
-  this.load.audio("click", "/assets/btn-click.mp3");
-  this.load.audio("pop", "/assets/balloon-pop.mp3");
+  this.load.audio("bgMusic", "assets/bg-music.mp3");
+  this.load.audio("click", "assets/btn-click.mp3");
+  this.load.audio("pop", "assets/balloon-pop.mp3");
 }
 
 function create() {
