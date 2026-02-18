@@ -134,10 +134,18 @@ function startGame(scene) {
         timerEvent.remove();
         spawnEvent.remove();
 
-        scene.time.delayedCall(4000, () => {
-          endGame(scene);
+        if (score === 30) {
+          endGame(scene, "You win!");
           gameActive = false;
-        });
+        } else {
+          scene.time.delayedCall(
+            score < 10 ? 5000 : score < 20 ? 4000 : 3000,
+            () => {
+              endGame(scene, "");
+              gameActive = false;
+            },
+          );
+        }
       }
     },
     loop: true,
@@ -169,8 +177,7 @@ function spawnBalloon(scene) {
   scene.tweens.add({
     targets: container,
     y: -200,
-    // duration: timeLeft > 20 ? 4000 : timeLeft > 10 ? 3000 : 2000,
-    duration: 5000,
+    duration: score < 10 ? 5000 : score < 20 ? 4000 : 3000,
     ease: "Linear",
     onComplete: () => container.destroy(),
   });
@@ -189,7 +196,7 @@ function spawnBalloon(scene) {
 // END GAME
 // ======================
 
-function endGame(scene) {
+function endGame(scene, message) {
   const centerX = scene.scale.width / 2;
   const centerY = scene.scale.height / 2;
 
@@ -197,7 +204,7 @@ function endGame(scene) {
   if (bgMusic && bgMusic.isPlaying) bgMusic.stop();
 
   scene.add
-    .text(centerX, centerY - 80, "Game Over", {
+    .text(centerX, centerY - 80, message || "Game Over", {
       fontSize: "48px",
       fontStyle: "bold",
       stroke: "#1B1B1B",
