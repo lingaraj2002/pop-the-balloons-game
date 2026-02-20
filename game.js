@@ -100,6 +100,10 @@ function startGame(scene) {
   score = 0;
   timeLeft = 30;
 
+  if (bgMusic && !bgMusic.isPlaying) {
+    bgMusic.play();
+  }
+
   scoreText = scene.add.text(20, 20, "Score: 0", {
     fontSize: "24px",
     fontStyle: "bold",
@@ -134,18 +138,19 @@ function startGame(scene) {
         timerEvent.remove();
         spawnEvent.remove();
 
-        if (score === 30) {
-          endGame(scene, "You win!");
-          gameActive = false;
-        } else {
-          scene.time.delayedCall(
-            score < 10 ? 5000 : score < 20 ? 4000 : 3000,
-            () => {
-              endGame(scene, "");
+        scene.time.delayedCall(
+          score < 10 ? 5000 : score < 20 ? 4000 : 3000,
+          () => {
+            if (gameActive) {
+              if (score >= 30) {
+                endGame(scene, "You win!");
+              } else {
+                endGame(scene, "Game Over");
+              }
               gameActive = false;
-            },
-          );
-        }
+            }
+          },
+        );
       }
     },
     loop: true,
@@ -189,6 +194,13 @@ function spawnBalloon(scene) {
     score++;
     scoreText.setText("Score: " + score);
     container.destroy();
+
+    if (score >= 30) {
+      gameActive = false;
+      timerEvent.remove();
+      spawnEvent.remove();
+      endGame(scene, "You win!");
+    }
   });
 }
 
